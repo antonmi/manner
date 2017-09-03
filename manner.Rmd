@@ -1,0 +1,80 @@
+---
+title: "Are you doing this in right manner?"
+author: "Anton Mishchuk"
+date: "9/3/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+## Summary
+The goal of your project is to predict the manner in which people do the exercises. 
+
+Two prediction model where used: 
+* regression trees ("rpart")
+* random forest ("rf")
+
+"rpart" shows bad performance with accuracy ~50%. But "rf" shows outstanding accuracy ~99%.
+
+Then the fitted model used to predict results for test data.
+
+## Libraries
+"dplyr" library was used for preparing data. "caret" package used for traing. I've also used "doMC"" library to train in parallel because "rf" model takes too much time.
+```{r warning=FALSE, message=FALSE}
+library(caret)
+library(dplyr)
+library(doMC)
+registerDoMC(cores = 8)
+```
+
+
+## Data
+I've removed first 7 colunms because they have some descriptive and time data. Also I removed all the column that has NA data:
+
+```{r}
+data <- read.csv("pml-training.csv", na.strings=c("","NA","#DIV/0!"))
+test_data <- read.csv("pml-testing.csv")
+
+data <- data[, -c(1:7)]
+clean_data <- data[, sapply(data, function(x) !any(is.na(x)))]
+```
+Data were splitted into trainig and validating sets (50% for each)
+```{r}
+inTrain = createDataPartition(clean_data$classe, p = 0.5)[[1]]
+training = clean_data[ inTrain,]
+validating = clean_data[-inTrain,]
+```
+## Prediction models
+Desicion tree ("rpart") and Random Forests ("rf") methods were used.
+Seed '123456' was used
+```{r}
+set.seed(123456)
+```
+### Regression trees
+```{r warning=FALSE, message=FALSE, cache=TRUE}
+modFit <- train(classe ~ ., data = training, method = 'rpart')
+pred.valid <- predict(modFit, validating)
+rpart.conf <- confusionMatrix(pred.valid, validating$classe)
+```
+So the accurracy is: `r rpart.conf$overall[["Accuracy"]]`
+
+### Random forests
+```{r warning=FALSE, message=FALSE, cache=TRUE}
+modFit <- train(classe ~ ., data = training, method = 'rf')
+pred.valid <- predict(modFit, validating)
+rf.conf <- confusionMatrix(pred.valid, validating$classe)
+```
+So the accurracy is: `r rf.conf$overall[["Accuracy"]]`
+
+## Using rf model to predict on test data
+```{r warning=FALSE, message=FALSE}
+predict(modFit, test_data)
+```
+
+
+
+
