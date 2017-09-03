@@ -2,7 +2,9 @@
 title: "Are you doing this in right manner?"
 author: "Anton Mishchuk"
 date: "9/3/2017"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
